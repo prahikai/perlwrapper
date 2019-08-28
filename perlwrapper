@@ -1,0 +1,80 @@
+#!/usr/bin/perl
+
+use strict;
+use DBI;
+
+my $type = shift @ARGV;
+my $script;
+my $home = "/home/users/rahikpa1/eggdrop/scripts-perl";
+
+if($type eq "-p") {
+	public(@ARGV);
+} else {
+	private(@ARGV);
+}
+
+exit 0;
+
+sub public {
+    my $nick = shift @ARGV;
+    my $uhost = shift @ARGV;
+    my $handle = shift @ARGV;
+    my $chan = shift @ARGV; $chan =~ s/\#/\\\#/;
+    my @tmp = split(" ", shift @ARGV); 
+    my $kaka = shift @tmp;
+    my $cmd = shift @tmp;
+    my $text = join(" ", @tmp);
+    my $oracle;
+
+    # try find a command first
+    $cmd =~ s/\W//g;
+    $script = $home."/".$cmd.".pl";
+    if( -x $script) {
+    	my $reply = `$script  '$text'`;
+  #	my $reply = `$script $nick $chan '$text'`;
+   	print "$reply";
+	return;
+    }
+
+    # or else feed given stuff to oraakkeli 
+    if($kaka =~ /^[zZ]irba-.*/) {
+	if($text =~ /.*\?$/) {
+		if($text !~ /\w+/) {
+			$oracle = `lynx -dump 'http://www.lintukoto.net/viihde/oraakkeli/index.php?kysymys=haista+$text&html=0&kysyja=$nick'`;
+       	 	} else {
+			 $text =~ s/[^A-Za-z0-9\s]//g;
+			 $text =~ s/\s/+/g;
+			$oracle = `lynx -dump 'http://www.lintukoto.net/viihde/oraakkeli/index.php?kysymys=$text&html=0&kysyja=$nick'`;
+		}
+		$oracle =~ s/\s\s*/ /g;
+		$oracle =~ s/^$//g;
+		$oracle =~ s/\n//g;
+		$oracle =~ s/^\s//;
+		print "$oracle\n";
+    	} 
+	# ihan vaan perinteen vuoksi
+	else {
+    		print "Tuntematon komento, huuda apua.\n";
+	}
+    }
+}
+
+sub private {
+    my $nick = shift @ARGV;
+    my $uhost = shift @ARGV;
+    my $handle = shift @ARGV;
+    my @tmp = split(" ", shift @ARGV); my $cmd = shift @tmp;
+    my $text = join(" ", @tmp);
+
+    if($cmd !~ /^\!/) {
+	return;
+    }
+
+    $cmd =~ s/^\!//;
+    $cmd =~ s/\W//g;
+    $script = $home."/".$cmd.".pl";
+    return if(! -x $script);
+
+   # my $reply = `$script $nick $text`;
+   # print "$reply";
+}
